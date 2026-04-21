@@ -35,6 +35,11 @@ impl StrettoCache {
             config: Arc::new(config.clone()),
             cache: ::stretto::Cache::builder(capacity * 10, capacity as i64)
                 .set_hasher(DefaultHasher)
+                // Without this, each insert is charged cost + sizeof(StoreItem<V>),
+                // so the effective capacity becomes max_cost / sizeof(StoreItem<V>)
+                // (~cap/57 for V = (u32, Arc<[u8]>)) — unfair vs moka whose
+                // capacity counts entries.
+                .set_ignore_internal_cost(true)
                 .finalize()
                 .unwrap(),
         }
